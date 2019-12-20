@@ -98,7 +98,8 @@ const OnBoardForms = withFormik({
   validationSchema: Yup.object().shape({
     name: Yup.string().required(),
     email: Yup.string().required(),
-    password: Yup.string().required()
+    password: Yup.string().required(),
+    terms: Yup.string().required()
   }),
   handleSubmit(values,{setStatus, resetForm}) {
     console.log("submitting", values);
