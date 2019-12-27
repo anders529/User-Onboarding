@@ -1,117 +1,96 @@
-import React, {useState,useEffect} from "react";
-import {withFormik, Form, Field} from "formik";
+import React, {useEffect, useState} from "react";
+import { withFormik, Form, Field } from "formik";
 import * as Yup from "yup";
 import axios from "axios";
 
-const OnboardForm = ({values, errors, touched, status}) => {
-  console.log("values", values);
-  console.log("errors", errors);
-  console.log("touched", touched);
+const OnboardForm =  ({ values, errors, touched, submitting, status }) => {
+  console.log('values', values);
+  console.log('errors', errors);
+  console.log('touched', touched);
 
-  const [onBoard, setOnboard] = useState([]);
+  const [member, setMembers] = useState([]);
+
   useEffect(() => {
-    console.log(status);
-    status &&
-      setOnboard(onBoard => [...onBoard, status]);
+    console.log('status has changed!', status);
+
+    status && setMembers(member => [...member,status]);
   }, [status]);
+
   return (
     <div>
-      <Form>
-        <label htmlFor="name">
-          Name:
-          <Field
-            id="name"
-            type="text"
-            name="name"
-            placeholder="name"
-          />
-          {touched.name &&
-            errors.name && (
-              <p className="errors">
-                {errors.name}
-              </p>
-            )}
-        </label>
-        <label htmlFor="email">
-          Email:
-          <Field
-            id="email"
-            type="text"
-            name="email"
-            placeholder="email"
-          />
-          {touched.email && errors.email && (
-            <p className="errors">
-              {errors.email}
-            </p>
-          )}
-        </label>
-        <label htmlFor="password">
-          Password:
-          <Field
-            id="password"
-            type="text"
-            name="password"
-            placeholder="password"
-          />
-          {touched.email && errors.password && (
-            <p className="errors">
-              {errors.password}
-            </p>
-          )}
-        </label>
-        <label>
-          Do You Agree To The Terms of Service?
-          <Field
-            type="checkbox"
-            name="terms"
-            checked={values.terms}
-          />
-          <span/>
-        </label>
-        <button type="submit">
-          Submit!
-        </button>
-      </Form>
-      {onBoard.map(onboard => {
-        return (
-          <ul key={onboard.id}>
-            <li>
-              Name: {onboard.name}
-            </li>
-            <li>Email: {onboard.email}</li>
-          </ul>
-        );
-      })}
+    <Form>
+        {touched.name && errors.name && <p>{errors.name}</p>}
+        <Field type="name" name="name" placeholder="Name" />
+        {touched.email && errors.email && <p>{errors.email}</p>}
+        <Field type="email" name="email" placeholder="Email" />
+        {touched.password && errors.password && <p>{errors.password}</p>}
+        <Field type="password" name="password" placeholder="Password" />
+      <label>
+        <Field type="checkbox" name="tos" checked={values.tos} />
+        Accept TOS
+      </label>
+      <Field component="select" name="role">
+        <option value="plsrole">Please Select a Role</option>
+        <option value="Front End Devloper">Front End Web Developer</option>
+        <option value="Back End Devloper">Back End Web Developer</option>
+        <option value="Data Scientist">Data Scientist</option>
+      </Field>
+      <button disabled={submitting}>Submit</button>
+    </Form>
+  
+  {member.map(members => {
+    return (
+      <div key={members.id}>
+          Name: {members.name}
+          <br/>
+          Email: {members.email}
+          <br/>
+          Role: {members.role}
+      </div>
+    )
+    })}
     </div>
-  );
-};
-const OnBoardForms = withFormik({
-  mapPropsToValues(props) {
+  )};
+
+const FormikOnboardForm = withFormik({
+  mapPropsToValues({ name, email, password, tos, role }) {
     return {
-      name: props.name || "",
-      email: props.email || "",
-      password: props.password || "",
-      terms: props.terms || false
+      name: name || "",
+      email: email || "",
+      password: password || "",
+      tos: tos || false,
+      role: role || "plsrole"
     };
   },
   validationSchema: Yup.object().shape({
-    name: Yup.string().required(),
-    email: Yup.string().required(),
-    password: Yup.string().required(),
-    terms: Yup.string().required()
+    name: Yup.string()
+      .required("Name is Required"),
+    email: Yup.string()
+      .email("Email not valid")
+      .required("Email is required"),
+    password: Yup.string()
+      .min(16, "Password must be 16 characters or longer")
+      .required("Password is required")
   }),
-  handleSubmit(values,{setStatus, resetForm}) {
-    console.log("submitting", values);
-    axios
-      .post("https://reqres.in/api/users/", values)
-      .then(res => {
-        console.log("success", res);
-        setStatus(res.data);
-        resetForm();
-      })
-      .catch(err =>
-        console.log(err.response));
-  }})
-  (OnboardForm);
-export default OnBoardForms;
+
+  handleSubmit(values, { resetForm,setStatus, setErrors, setSubmitting }) {
+    if (values.email === "waffle@syrup.com") {
+      setErrors({ email: "That email is already taken" });
+    } else {
+      axios
+        .post("https://reqres.in/api/users", values)
+        .then(res => {
+          console.log(res);
+          resetForm();
+          setStatus(res.data);
+          setSubmitting(false);
+        })
+        .catch(err => {
+          console.log(err);
+          setSubmitting(false);
+        });
+    }
+  }
+})(OnboardForm);
+
+export default FormikOnboardForm;
